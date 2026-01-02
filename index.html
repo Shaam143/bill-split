@@ -3,260 +3,400 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Grocery Bill Splitter</title>
+  <title>Grouped Bill Splitter</title>
   <style>
-    /* ==== Reset & Global ==== */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* ==== Global Variables & Reset ==== */
+    :root {
+      --bg: #0f0f13;
+      --card-bg: #1e1e24;
+      --input-bg: #2b2b36;
+      --text-main: #e0e0e0;
+      --text-muted: #888;
+      --accent: #7c4dff; /* Purple */
+      --success: #00e676; /* Green */
+      --danger: #ff5252; /* Red */
+      --border: #333;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #1e1e2f;
-      min-height: 100vh;
+      background-color: var(--bg);
+      color: var(--text-main);
       padding: 20px;
-      color: #f4f4f4;
       line-height: 1.5;
     }
-    h1 {
-      text-align: center;
-      color: #fff;
-      margin-bottom: 30px;
-      font-size: 2.4rem;
-      font-weight: 700;
-    }
+
+    .container { max-width: 1100px; margin: 0 auto; }
+    
+    h1 { text-align: center; margin-bottom: 30px; font-weight: 800; letter-spacing: -1px; }
+    h1 span { color: var(--accent); }
+    h2 { font-size: 1.2rem; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
 
     /* ==== Layout ==== */
-    .container { max-width: 1100px; margin: 0 auto; }
-    .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .grid { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
+    @media (max-width: 850px) { .grid { grid-template-columns: 1fr; } }
 
-    /* ==== Cards ==== */
     .card {
-      background: #2b2b3c;
+      background: var(--card-bg);
       border-radius: 12px;
-      padding: 25px;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid #2a2a30;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
-    .card h2 { margin-bottom: 20px; font-size: 1.3rem; color: #ffdd57; }
 
     /* ==== Forms ==== */
-    .form-group { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 6px; font-weight: 500; color: #ddd; }
-    input, select {
-      width: 100%; padding: 12px;
-      border: 2px solid #444; border-radius: 8px;
-      font-size: 15px; background: #1e1e2f; color: #f4f4f4;
-      transition: border-color 0.2s;
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px; }
+    
+    input, select, button {
+      width: 100%; padding: 12px; 
+      background: var(--input-bg); border: 1px solid var(--border);
+      color: #fff; border-radius: 8px; font-size: 0.95rem; outline: none;
+      transition: 0.2s;
     }
-    input:focus, select:focus { border-color: #ffdd57; outline: none; }
-    .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
-    .checkbox-label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.9rem; }
-
-    /* ==== Buttons ==== */
+    input:focus, select:focus { border-color: var(--accent); background: #333; }
+    
     button {
-      display: inline-block; width: 100%; padding: 12px;
-      background: #ffdd57; color: #1e1e2f;
-      border: none; border-radius: 8px;
-      font-size: 16px; font-weight: 600;
-      cursor: pointer; transition: 0.3s;
+      background: var(--accent); color: #fff; font-weight: 600; border: none; cursor: pointer; margin-top: 10px;
     }
-    button:hover { background: #ffd633; }
+    button:hover { filter: brightness(1.1); }
+    button.btn-red { background: rgba(255, 82, 82, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+    button.btn-red:hover { background: var(--danger); color: white; }
 
-    .delete-btn {
-      background: #e74c3c; padding: 6px 12px; font-size: 0.85em;
-      border-radius: 5px; cursor: pointer; color: #fff;
-      border: none; transition: 0.3s;
+    /* ==== Participants ==== */
+    .row { display: flex; gap: 10px; }
+    .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .chip {
+      background: #333; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem;
+      display: flex; align-items: center; gap: 8px; border: 1px solid #444;
     }
-    .delete-btn:hover { background: #c0392b; }
+    .chip-close { cursor: pointer; color: var(--danger); font-weight: bold; }
 
-    /* ==== Bills List ==== */
-    .bills-container { max-height: 400px; overflow-y: auto; }
-    .empty-state { text-align: center; color: #aaa; padding: 30px; }
-    .bill-item {
-      background: #3a3a4f;
-      border-radius: 8px;
-      padding: 15px; margin-bottom: 12px;
-      transition: 0.3s;
+    /* ==== Checkboxes ==== */
+    .checkbox-list {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px;
+      background: #15151a; padding: 10px; border-radius: 8px;
     }
-    .bill-item:hover { background: #44445c; }
-    .bill-header { display: flex; justify-content: space-between; align-items: flex-start; }
-    .bill-name { font-weight: 600; font-size: 1.1em; color: #ffdd57; margin-bottom: 6px; }
-    .bill-amount { color: #bbb; font-size: 0.9em; }
-    .bill-split {
-      margin-top: 8px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
+    .cb-item label { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer; }
+    .cb-item input { width: auto; margin: 0; }
+
+    /* ==== History ==== */
+    .history-container { max-height: 300px; overflow-y: auto; padding-right: 5px; }
+    .history-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid #333; font-size: 0.9rem;
     }
-    .split-tag {
-      background: #555;
-      color: #fff;
-      padding: 3px 8px;
+    .history-meta { color: var(--text-muted); font-size: 0.8rem; }
+    .del-btn { width: auto; padding: 4px 8px; font-size: 0.8rem; background: transparent; color: var(--text-muted); margin: 0; }
+    .del-btn:hover { color: var(--danger); }
+
+    /* ==== NEW SETTLEMENT UI ==== */
+    .debtor-card {
+      background: rgba(255, 82, 82, 0.05);
+      border-left: 4px solid var(--danger);
       border-radius: 6px;
-      font-size: 0.8em;
+      padding: 15px; margin-bottom: 15px;
     }
+    .debtor-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+    }
+    .debtor-name { font-size: 1.1rem; font-weight: bold; color: #ff8a80; }
+    .debtor-total { background: var(--danger); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; }
+    
+    .payee-row {
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 4px; margin-bottom: 5px;
+    }
+    .payee-info { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+    .arrow { color: var(--text-muted); }
+    .payee-amount { color: var(--success); font-weight: bold; margin-right: 10px; }
+    
+    .settle-btn {
+      width: auto; margin: 0; padding: 4px 10px; font-size: 0.75rem; 
+      background: transparent; border: 1px solid var(--success); color: var(--success);
+    }
+    .settle-btn:hover { background: var(--success); color: #000; }
 
-    /* ==== Balances ==== */
-    .balance-grid { display: grid; gap: 15px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
-    .balance-card {
-      background: #3a3a4f; border: 2px solid #555;
-      border-radius: 8px; padding: 15px; text-align: center;
-    }
-    .balance-name { font-size: 1em; margin-bottom: 6px; color: #ddd; font-weight: 500; }
-    .balance-amount { font-size: 1.5em; font-weight: bold; margin-bottom: 4px; }
-    .positive { color: #2ecc71; }
-    .negative { color: #e74c3c; }
-    .zero { color: #95a5a6; }
-    .balance-status { font-size: 0.85em; color: #bbb; }
+    .clean-slate { text-align: center; color: var(--text-muted); padding: 40px; font-style: italic; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Grocery Bill Splitter 🛒</h1>
 
-    <div class="grid">
-      <!-- Add Grocery Bill -->
+<div class="container">
+  <h1>💸 Expense <span>Manager</span></h1>
+
+  <div class="grid">
+    <div>
       <div class="card">
-        <h2>Add Grocery Item</h2>
-        <div class="form-group">
-          <label for="billName">Item Name</label>
-          <input type="text" id="billName" placeholder="e.g., Apples, Milk">
+        <h2>1. Participants</h2>
+        <div class="row">
+          <input type="text" id="personInput" placeholder="Name (e.g. John)" onkeypress="handleEnter(event)">
+          <button style="width: auto;" onclick="addPerson()">Add</button>
         </div>
-        <div class="form-group">
-          <label for="billAmount">Cost ($)</label>
-          <input type="number" id="billAmount" placeholder="0.00" step="0.01">
-        </div>
-        <div class="form-group">
-          <label for="paidBy">Bought By</label>
-          <select id="paidBy"></select>
-        </div>
-        <div class="form-group">
-          <label>Shared With</label>
-          <div class="checkbox-grid" id="splitWith"></div>
-        </div>
-        <button id="addBtn">Add Item</button>
+        <div class="chips-container" id="participantsList"></div>
       </div>
 
-      <!-- Bills List -->
       <div class="card">
-        <h2>Grocery Items</h2>
-        <div class="bills-container" id="billsList">
-          <div class="empty-state">No items added yet</div>
+        <h2>2. Add Expense</h2>
+        <div class="form-group">
+          <input type="text" id="desc" placeholder="Description (e.g. Pizza)">
         </div>
+        <div class="row form-group">
+          <input type="number" id="amount" placeholder="0.00" step="0.01">
+          <select id="payerSelect"><option>Payer?</option></select>
+        </div>
+        <div class="form-group">
+          <label>Split amongst:</label>
+          <div class="checkbox-list" id="splitList"></div>
+        </div>
+        <button onclick="addExpense()">Add Transaction</button>
+      </div>
+      
+      <div class="card">
+        <h2>History</h2>
+        <div class="history-container" id="historyList">
+          <div class="clean-slate">No transactions yet</div>
+        </div>
+        <button class="btn-red" onclick="resetAll()">Reset All Data</button>
       </div>
     </div>
 
-    <!-- Balances -->
-    <div class="card">
-      <h2>Balance Summary</h2>
-      <div class="balance-grid" id="balances"></div>
+    <div>
+      <div class="card">
+        <h2>3. Settlement Plan</h2>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:15px;">
+          Below is the optimized payment plan grouped by person.
+        </p>
+        <div id="settlementArea">
+          <div class="clean-slate">Add expenses to calculate settlements.</div>
+        </div>
+      </div>
     </div>
   </div>
+</div>
 
-  <script>
-    const people = ['Shaamalan','Stenly','Rentap','Max','Jack','Authur','Hans'];
-    let bills = [];
+<script>
+  // State
+  let people = [];
+  let expenses = [];
 
-    const paidBySelect = document.getElementById('paidBy');
-    const splitWithContainer = document.getElementById('splitWith');
+  // UI Elements
+  const els = {
+    personInput: document.getElementById('personInput'),
+    participantsList: document.getElementById('participantsList'),
+    payerSelect: document.getElementById('payerSelect'),
+    splitList: document.getElementById('splitList'),
+    historyList: document.getElementById('historyList'),
+    settlementArea: document.getElementById('settlementArea'),
+    inputs: {
+      desc: document.getElementById('desc'),
+      amount: document.getElementById('amount')
+    }
+  };
 
-    // Init dropdown & checkboxes
-    function initUI() {
-      paidBySelect.innerHTML = people.map(p => `<option value="${p}">${p}</option>`).join('');
-      splitWithContainer.innerHTML = people.map(p => `
-        <label class="checkbox-label">
-          <input type="checkbox" value="${p}" checked> ${p}
-        </label>
-      `).join('');
+  // 1. Participant Logic
+  function handleEnter(e) { if(e.key === 'Enter') addPerson(); }
+
+  function addPerson() {
+    const name = els.personInput.value.trim();
+    if(!name || people.includes(name)) return;
+    people.push(name);
+    els.personInput.value = '';
+    renderControls();
+    calculate();
+  }
+
+  function removePerson(name) {
+    if(!confirm(`Remove ${name}? Expenses involving them will be deleted.`)) return;
+    people = people.filter(p => p !== name);
+    expenses = expenses.filter(e => e.payer !== name && !e.involved.includes(name));
+    renderControls();
+    calculate();
+  }
+
+  // 2. Expense Logic
+  function addExpense() {
+    const desc = els.inputs.desc.value.trim() || 'Item';
+    const amount = parseFloat(els.inputs.amount.value);
+    const payer = els.payerSelect.value;
+    const involved = Array.from(els.splitList.querySelectorAll('input:checked')).map(cb => cb.value);
+
+    if(!payer || isNaN(amount) || amount <= 0 || involved.length === 0) {
+      alert("Please check amount, payer, and split list.");
+      return;
     }
 
-    // Add grocery item
-    function addBill() {
-      const name = document.getElementById('billName').value.trim();
-      const amount = parseFloat(document.getElementById('billAmount').value);
-      const paidBy = paidBySelect.value;
-      const checkboxes = splitWithContainer.querySelectorAll('input[type="checkbox"]');
+    expenses.push({ id: Date.now(), desc, amount, payer, involved, type: 'expense' });
+    
+    // Reset inputs
+    els.inputs.desc.value = '';
+    els.inputs.amount.value = '';
+    els.splitList.querySelectorAll('input').forEach(i => i.checked = true);
+    
+    calculate();
+  }
 
-      if (!name || isNaN(amount) || amount <= 0) {
-        return alert('Enter a valid item and cost');
-      }
+  function deleteExpense(id) {
+    expenses = expenses.filter(e => e.id !== id);
+    calculate();
+  }
 
-      const splitWith = {};
-      checkboxes.forEach(cb => splitWith[cb.value] = cb.checked);
-      if (!Object.values(splitWith).some(Boolean)) {
-        return alert('Select at least one person to share the item');
-      }
+  function settle(from, to, amount) {
+    expenses.push({
+      id: Date.now(),
+      desc: `Settlement to ${to}`,
+      amount: parseFloat(amount),
+      payer: from,
+      involved: [to],
+      type: 'settlement'
+    });
+    calculate();
+  }
 
-      bills.push({ id: Date.now(), name, amount, paidBy, splitWith });
+  // 3. Calculation & Display Logic
+  function calculate() {
+    renderHistory();
 
-      // Reset form
-      document.getElementById('billName').value = '';
-      document.getElementById('billAmount').value = '';
-      checkboxes.forEach(cb => cb.checked = true);
+    // Step A: Calculate Net Balances
+    let balances = {};
+    people.forEach(p => balances[p] = 0);
 
-      updateDisplay();
-    }
+    expenses.forEach(e => {
+      const share = e.amount / e.involved.length;
+      balances[e.payer] += e.amount; // Payer gets +
+      e.involved.forEach(p => balances[p] -= share); // Consumer gets -
+    });
 
-    // Remove item
-    function removeBill(id) {
-      bills = bills.filter(b => b.id !== id);
-      updateDisplay();
-    }
+    // Step B: Separate into Debtors (-) and Creditors (+)
+    let debtors = [];
+    let creditors = [];
+    
+    people.forEach(p => {
+      const bal = balances[p];
+      if (bal < -0.01) debtors.push({ name: p, amount: bal });
+      if (bal > 0.01) creditors.push({ name: p, amount: bal });
+    });
 
-    // Calculate balances
-    function calculateBalances() {
-      const balances = Object.fromEntries(people.map(p => [p, 0]));
-      bills.forEach(bill => {
-        const participants = Object.entries(bill.splitWith).filter(([_,v]) => v).map(([p]) => p);
-        const share = bill.amount / participants.length;
-        participants.forEach(p => balances[p] -= share);
-        balances[bill.paidBy] += bill.amount;
+    // Step C: Greedy Matching Algorithm
+    debtors.sort((a, b) => a.amount - b.amount); // Ascending (-100 before -10)
+    creditors.sort((a, b) => b.amount - a.amount); // Descending (100 before 10)
+
+    let transactions = []; // Store calculated transfers
+
+    let i = 0; // debtor index
+    let j = 0; // creditor index
+
+    while (i < debtors.length && j < creditors.length) {
+      let debtor = debtors[i];
+      let creditor = creditors[j];
+
+      // Amount to transfer is min(|debt|, credit)
+      let amount = Math.min(Math.abs(debtor.amount), creditor.amount);
+      
+      transactions.push({
+        from: debtor.name,
+        to: creditor.name,
+        amount: amount
       });
-      return balances;
+
+      // Update internal values
+      debtor.amount += amount;
+      creditor.amount -= amount;
+
+      // Move indices if settled (using epsilon for float precision)
+      if (Math.abs(debtor.amount) < 0.01) i++;
+      if (creditor.amount < 0.01) j++;
     }
 
-    // Render UI
-    function updateDisplay() {
-      const billsList = document.getElementById('billsList');
-      if (bills.length === 0) {
-        billsList.innerHTML = `<div class="empty-state">No items added yet</div>`;
-      } else {
-        billsList.innerHTML = bills.map(bill => {
-          const splitTags = Object.entries(bill.splitWith)
-            .filter(([_, v]) => v)
-            .map(([p]) => `<span class="split-tag">${p}</span>`)
-            .join('');
-          return `
-            <div class="bill-item">
-              <div class="bill-header">
-                <div>
-                  <div class="bill-name">${bill.name}</div>
-                  <div class="bill-amount">$${bill.amount.toFixed(2)} bought by ${bill.paidBy}</div>
-                  <div class="bill-split">Shared with: ${splitTags}</div>
-                </div>
-                <button class="delete-btn" onclick="removeBill(${bill.id})">Delete</button>
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
+    renderSettlementPlan(transactions);
+  }
 
-      const balances = calculateBalances();
-      document.getElementById('balances').innerHTML = people.map(p => {
-        const amount = balances[p];
-        const status = amount > 0 ? 'Should receive' : amount < 0 ? 'Should pay' : 'Even';
-        const className = amount > 0 ? 'positive' : amount < 0 ? 'negative' : 'zero';
-        return `
-          <div class="balance-card">
-            <div class="balance-name">${p}</div>
-            <div class="balance-amount ${className}">${amount >= 0 ? '+' : ''}${amount.toFixed(2)}</div>
-            <div class="balance-status">${status}</div>
+  function renderSettlementPlan(transactions) {
+    if (transactions.length === 0) {
+      els.settlementArea.innerHTML = '<div class="clean-slate">All debts settled!</div>';
+      return;
+    }
+
+    // Step D: Group by Sender for clearer UI
+    const grouped = {};
+    transactions.forEach(t => {
+      if (!grouped[t.from]) grouped[t.from] = { total: 0, payments: [] };
+      grouped[t.from].payments.push(t);
+      grouped[t.from].total += t.amount;
+    });
+
+    // Step E: Render
+    els.settlementArea.innerHTML = Object.keys(grouped).map(payerName => {
+      const data = grouped[payerName];
+      
+      const rows = data.payments.map(p => `
+        <div class="payee-row">
+          <div class="payee-info">
+            <span class="arrow">➜</span> To <strong>${p.to}</strong>
           </div>
-        `;
-      }).join('');
-    }
+          <div style="display:flex; align-items:center;">
+            <span class="payee-amount">$${p.amount.toFixed(2)}</span>
+            <button class="settle-btn" onclick="settle('${p.from}', '${p.to}', ${p.amount.toFixed(2)})">Mark Paid</button>
+          </div>
+        </div>
+      `).join('');
 
-    // Init
-    document.getElementById('addBtn').addEventListener('click', addBill);
-    initUI();
-    updateDisplay();
-  </script>
+      return `
+        <div class="debtor-card">
+          <div class="debtor-header">
+            <span class="debtor-name">${payerName}</span>
+            <span class="debtor-total">Total Owed: $${data.total.toFixed(2)}</span>
+          </div>
+          ${rows}
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 4. Render Helpers
+  function renderControls() {
+    // Chips
+    els.participantsList.innerHTML = people.map(p => 
+      `<span class="chip">${p} <span class="chip-close" onclick="removePerson('${p}')">&times;</span></span>`
+    ).join('');
+    
+    // Select
+    const curPayer = els.payerSelect.value;
+    els.payerSelect.innerHTML = `<option value="" disabled selected>Payer?</option>` + 
+      people.map(p => `<option value="${p}">${p}</option>`).join('');
+    if(people.includes(curPayer)) els.payerSelect.value = curPayer;
+
+    // Checkboxes
+    els.splitList.innerHTML = people.map(p => `
+      <div class="cb-item"><label><input type="checkbox" value="${p}" checked> ${p}</label></div>
+    `).join('');
+  }
+
+  function renderHistory() {
+    if(expenses.length === 0) {
+      els.historyList.innerHTML = '<div class="clean-slate">No transactions yet</div>';
+      return;
+    }
+    els.historyList.innerHTML = expenses.slice().reverse().map(e => `
+      <div class="history-item" style="${e.type === 'settlement' ? 'opacity:0.6; font-style:italic' : ''}">
+        <div>
+          <div style="font-weight:600; color:#eee">${e.desc}</div>
+          <div class="history-meta">${e.payer} paid $${e.amount.toFixed(2)}</div>
+        </div>
+        <button class="del-btn" onclick="deleteExpense(${e.id})">Delete</button>
+      </div>
+    `).join('');
+  }
+
+  function resetAll() {
+    if(!confirm("Clear all?")) return;
+    people = [];
+    expenses = [];
+    renderControls();
+    calculate();
+  }
+</script>
 </body>
 </html>
