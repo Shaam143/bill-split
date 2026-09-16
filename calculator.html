@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -90,7 +91,8 @@
             margin-top: 1.5rem;
             padding-top: 1.5rem;
             border-top: 1px solid var(--border);
-            display: none; /* Hidden until calculated */
+            display: none;
+            /* Hidden until calculated */
         }
 
         .group-section {
@@ -125,6 +127,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <div class="calculator-container">
@@ -185,12 +188,12 @@
 
             // Constants
             const g1Count = 3;
-            const g2Count = 4;
+            const g2Count = 3;
             const totalPeople = g1Count + g2Count; // 7
 
             // 1. Electric Calculations
             // Group 1 pays 20% flat for aircon, remaining 80% is shared by all 7
-            const electricAircon = electric * 0.20; 
+            const electricAircon = electric * 0.20;
             const electricShared = electric * 0.80;
 
             const perPersonAircon = electricAircon / g1Count;
@@ -211,7 +214,7 @@
             // Update the UI
             document.getElementById('g1-person').innerText = "RM " + g1PerPerson.toFixed(2);
             document.getElementById('g1-total').innerText = "RM " + g1Total.toFixed(2);
-            
+
             document.getElementById('g2-person').innerText = "RM " + g2PerPerson.toFixed(2);
             document.getElementById('g2-total').innerText = "RM " + g2Total.toFixed(2);
 
@@ -220,4 +223,5 @@
         }
     </script>
 </body>
+
 </html>
